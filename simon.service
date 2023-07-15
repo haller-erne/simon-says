@@ -1,28 +1,28 @@
 # systemd-script for running usbformatter as a service
 # see https://learn.sparkfun.com/tutorials/how-to-run-a-raspberry-pi-program-on-startup#method-3-systemd
 # to install:
-#   1. copy the python script to /opt/usbformatter
-#        sudo mkdir /opt/usbformatter
-#        sudo cp usbformatter.py /opt/usbformatter/
+#   1. copy the python script to /opt/simon
+#        sudo mkdir /opt/simon
+#        sudo cp *.py /opt/simon/
 #   2. copy this file to /lib/systemd/system/:
-#        sudo chmod 644 usbformatter.service
-#        sudo cp usbformatter.service /lib/systemd/system/
+#        sudo chmod 644 simon.service
+#        sudo cp simon.service /lib/systemd/system/
 #   3. enable this service to be started at boot
 #        sudo systemctl daemon-reload
-#        sudo systemctl enable usbformatter.service
-#        sudo systemctl start usbformatter.service
+#        sudo systemctl enable simon.service
+#        sudo systemctl start simon.service
 #   4. check if it is running and show log:
-#        sudo systemctl status usbformatter.service
-#        journalctl -u usbformatter.service -f
+#        sudo systemctl status simon.service
+#        journalctl -u simon.service -f
 
 [Unit]
-Description=Automatically format plugged USB thumbdrives / license sticks
+Description=Simon says demo (game)
 After=multi-user.target
 
 [Service]
 # add type=idle to wait until the system has fully booted
 Type=idle
-ExecStart=/usr/bin/python3 /opt/usbformatter/usbformatter.py
+ExecStart=/usr/bin/python3 /opt/simon/simon.py
 Restart=always
 # if you want to start as a specific user, specify it - else it 
 # will start as root (what we want here)
