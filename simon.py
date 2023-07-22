@@ -61,16 +61,27 @@ def victory_normal(key):
     # The first beep is 0.02 seconds followed by 5 beeps of 0.07 seconds with a 0.02 second gap 
     # between tones the light of the last colour of the sequence is flashed on with each beep. 
     # The victory tone is played 0.8 seconds after the last colour of the sequence has been pressed and released.
-    sounds.play(key, octave)
-    sleep(0.02)
-    sounds.stop()
-    for i in range(2,6):
-        sleep(0.02)
-        hid.led(key)
-        sounds.play(key, octave)
-        sleep(0.07)
-        sounds.stop()
-        hid.led(0)
+    #sounds.play(key, octave)
+    hid.led_all(hid.keycolors[key-1])
+    hid.led_sw([0,1,1,0])
+    sounds.music_play('tadaa.mp3', 1.0)
+    sleep(0.2)
+    hid.led_all([0,0,0])
+    hid.led_sw([0,0,0,0])
+    #sounds.stop()
+    for i in range(2,13):
+        sleep(0.1)
+        hid.led_all(hid.keycolors[key-1])
+        hid.led_sw([0,1,1,0])
+        #sounds.play(key, octave)
+        sleep(0.1)
+        #sounds.stop()
+        hid.led_all([0,0,0])
+        hid.led_sw([0,0,0,0])
+        hid.poll()
+    while not sounds.music_is_done:
+        hid.poll()
+        sleep(0.1)
 
 def play_sequence(tones, duration, gap):
     print("Sequence: ", end='')
@@ -79,6 +90,7 @@ def play_sequence(tones, duration, gap):
             sleep(gap)
         print(f" {v}", end='')
         play_note(v, duration)
+        hid.poll()
     print("")
 
 def victory_razz(key):
@@ -89,12 +101,14 @@ def victory_razz(key):
         sleep(0.1)
         sounds.stop()
         hid.led(0)
+        hid.poll()
     
     sounds.play(0, octave)
     for i, v in enumerate(razz):
         hid.led(v)
         sleep(0.1)
         hid.led(0)
+        hid.poll()
     sounds.stop()
 
 
@@ -115,9 +129,27 @@ def game_loop(state, key):
 
     if state.mode <= 0:         # startup
         #victory_normal(3)
-        victory_razz(3)
+        #victory_razz(3)
+        sounds.music_play('bensound-summer_ogg_music.ogg')
         state.mode = 1
+        hid.led_sw([0,0,0,0])
+
     elif state.mode == 1:       # idle, wait for start
+        sounds.music_loop()     # loop the music
+        keys = hid.get_keys()
+        sw = hid.get_sw()
+        if keys == [0,0,0,0]:
+            hid.animate()           # show the idle animation
+        if sw[1] != 0 or sw[2] != 0:
+            state.mode = 2
+            if sw[1] != 0:
+                state.level = 6
+                hid.led_sw([0,1,0,0])
+            else:
+                state.level = 8
+                hid.led_sw([0,0,1,0])
+            print(f'Starting level {state.level}')
+            
         if key >= 0 and (key != state.key):
             # button pressed or released
             if key != 0:
@@ -127,16 +159,28 @@ def game_loop(state, key):
                 hid.led(0)
                 sounds.stop()
             print(key)
-            if state.key > 0 and key > 0:
-                # zwei tasten gedrückt --> start
-                # setze Level: 1-4: 8 / 14 / 20 / 31 farben!
-                hid.led(0)
-                sounds.stop()
-                state.mode = 2
+            #if state.key > 0 and key > 0:
+            #    # zwei tasten gedrückt --> start
+            #    # setze Level: 1-4: 8 / 14 / 20 / 31 farben!
+            #    state.mode = 2
+            #    print(f'Starting level {state.level}')
+
             state.key = key
-        # todo: leuchtmuster anzeigen
+
     elif state.mode == 2:         # startup
-        if key == 0:            # wait for keys released
+        hid.led(0)
+        sounds.stop()
+        sounds.music_stop()
+        sleep(0.2)
+        sounds.music_play('game-start-6104.mp3', 1.0)
+        state.mode = 3
+
+    elif state.mode == 3:         # startup
+        sw = hid.get_sw()
+        keys = hid.get_keys()
+        if keys == [0,0,0,0] and sw[1] == 0 and sw[2] == 0 and sounds.music_is_done():            # wait for keys released and music done
+            sounds.music_stop()
+            sleep(0.2)
             state.mode = 100
 
     elif state.mode == 100:       # game starting
@@ -192,14 +236,18 @@ def game_loop(state, key):
                 state.mode = 999               # verloren!
         
     elif state.mode == 999:       # verloren
-        play_note(0, 1.5)
-        state.mode = 0           
+        sounds.music_play('game-over.mp3', 1.0)
+        state.mode = 1999
 
     elif state.mode == 1000:      # gewonnen
         victory_normal(state.sequence[len(state.sequence)-1])
         state.mode = 0           
   
-        
+    elif state.mode == 1999:       # 
+        if sounds.music_is_done():
+            play_note(0, 1.5)
+            state.mode = 0           
+
 
 # define a main function
 def main():

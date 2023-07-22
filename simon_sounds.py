@@ -51,6 +51,20 @@ class Sounds:
         self._sound =  self._tones[tone]
         self._sound.play(-1)
 
+    def music_play(self, file, volume = 0.1):
+        pygame.mixer.music.load('/home/pi/prj/simon/src/sounds/' + file)
+        pygame.mixer.music.play()
+        pygame.mixer.music.set_volume(volume)
+
+    def music_loop(self):
+        if not pygame.mixer.music.get_busy():
+            pygame.mixer.music.play()
+
+    def music_is_done(self):
+        return not pygame.mixer.music.get_busy()
+
+    def music_stop(self):
+        pygame.mixer.music.stop()
         
     # stop playing the tone
     def stop(self):
